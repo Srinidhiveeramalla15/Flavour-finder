@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flavor Finder - Recipe Mood Matcher</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            background: #f5f5f5;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .search-bar {
+            margin: 20px auto;
+            max-width: 600px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 20px;
+            font-size: 1.1em;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-input:focus {
+            border-color: #3498db;
+        }
+
+        .mood-buttons {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .mood-btn {
+            padding: 12px 25px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            background: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .mood-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .mood-btn.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .recipe-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .recipe-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            opacity: 0;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .recipe-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .recipe-card h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .recipe-info {
+            display: flex;
+            gap: 15px;
+            margin: 10px 0;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .recipe-info span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .difficulty {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .easy { background: #a8e6cf; color: #2d6a4f; }
+        .medium { background: #ffd3b6; color: #8b4513; }
+        .hard { background: #ffaaa5; color: #8b0000; }
+
+        .rating {
+            color: #f1c40f;
+            font-size: 0.9em;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .control-btn {
+            padding: 10px 20px;
+            font-size: 1em;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            background: #3498db;
+            color: white;
+            transition: background 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background: #2980b9;
+        }
+
+        .favorite-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: transform 0.3s ease;
+        }
+
+        .favorite-btn:hover {
+            transform: scale(1.2);
+        }
+
+        .favorite-btn.active {
+            color: #e74c3c;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mood-buttons {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .recipe-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .filters {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 15px;
+            background: #fff;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn:hover {
+            background: #3498db;
+            color: white;
+        }
+
+        .filter-btn.active {
+            background: #3498db;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🍽️ Flavor Finder</h1>
+            <p>Find the perfect recipe for your mood!</p>
+        </header>
+
+        <div class="search-bar">
+            <input type="text" class="search-input" placeholder="Search recipes by name or ingredients..." id="searchInput">
+        </div>
+
+        <div class="filters">
+            <button class="filter-btn" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="quick">Quick Meals (≤15min)</button>
+            <button class="filter-btn" data-filter="easy">Easy Recipes</button>
+            <button class="filter-btn" data-filter="vegetarian">Vegetarian</button>
+            <button class="filter-btn" data-filter="favorite">My Favorites</button>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" id="randomBtn">🎲 Random Recipe</button>
+            <button class="control-btn" id="viewAllBtn">👀 View All</button>
+        </div>
+
+        <div class="mood-buttons">
+            <button class="mood-btn" data-mood="happy">😊 Happy</button>
+            <button class="mood-btn" data-mood="sad">😢 Comfort Food</button>
+            <button class="mood-btn" data-mood="stressed">😰 Stress Relief</button>
+            <button class="mood-btn" data-mood="adventurous">🌟 Adventurous</button>
+            <button class="mood-btn" data-mood="lazy">😴 Quick & Easy</button>
+        </div>
+
+        <div class="recipe-container" id="recipeContainer"></div>
+    </div>
+
+    <script>
+        const recipes = {
+            happy: [
+                {
+                    name: "Rainbow Fruit Smoothie Bowl",
+                    description: "Start your day with this vibrant and nutritious smoothie bowl!",
+                    ingredients: ["Mixed berries", "Banana", "Greek yogurt", "Honey", "Granola", "Fresh fruits for topping"],
+                    instructions: "Blend berries, banana, yogurt, and honey. Top with granola and fresh fruits.",
+                    time: 10,
+                    difficulty: "easy",
+                    rating: 4.8,
+                    isVegetarian: true
+                },
+                {
+                    name: "Sunny Side Up Breakfast",
+                    description: "A cheerful breakfast to boost your mood!",
+                    ingredients: ["Eggs", "Avocado", "Whole grain toast", "Cherry tomatoes", "Fresh herbs"],
+                    instructions: "Toast bread, fry eggs, slice avocado. Arrange beautifully with tomatoes and herbs.",
+                    time: 15,
+                    difficulty: "easy",
+                    rating: 4.5,
+                    isVegetarian: true
+                }
+            ],
+            sad: [
+                {
+                    name: "Classic Mac & Cheese",
+                    description: "The ultimate comfort food with creamy cheese sauce.",
+                    ingredients: ["Macaroni", "Cheddar cheese", "Butter", "Milk", "Breadcrumbs"],
+                    instructions: "Cook pasta, make cheese sauce, combine and bake until golden.",
+                    time: 30,
+                    difficulty: "medium",
+                    rating: 4.9,
+                    isVegetarian: true
+                },
+                {
+                    name: "Chocolate Chip Cookies",
+                    description: "Warm, gooey cookies that feel like a hug.",
+                    ingredients: ["Flour", "Butter", "Brown sugar", "Chocolate chips", "Vanilla extract"],
+                    instructions: "Mix ingredients, form cookies, bake until golden brown.",
+                    time: 25,
+                    difficulty: "medium",
+                    rating: 4.7,
+                    isVegetarian: true
+                }
+            ],
+            stressed: [
+                {
+                    name: "Calming Chamomile Tea Cake",
+                    description: "A soothing treat with subtle floral notes.",
+                    ingredients: ["Flour", "Chamomile tea", "Honey", "Butter", "Eggs"],
+                    instructions: "Infuse milk with tea, mix ingredients, bake until done.",
+                    time: 45,
+                    difficulty: "medium",
+                    rating: 4.3,
+                    isVegetarian: true
+                },
+                {
+                    name: "Lavender Shortbread",
+                    description: "Buttery cookies with calming lavender.",
+                    ingredients: ["Butter", "Sugar", "Flour", "Dried lavender", "Salt"],
+                    instructions: "Mix ingredients, chill dough, cut shapes, bake until light golden.",
+                    time: 35,
+                    difficulty: "medium",
+                    rating: 4.4,
+                    isVegetarian: true
+                }
+            ],
+            adventurous: [
+                {
+                    name: "Spicy Thai Curry",
+                    description: "An exciting explosion of flavors!",
+                    ingredients: ["Coconut milk", "Thai curry paste", "Vegetables", "Rice", "Lime"],
+                    instructions: "Sauté curry paste, add coconut milk and vegetables, serve with rice.",
+                    time: 40,
+                    difficulty: "hard",
+                    rating: 4.6,
+                    isVegetarian: true
+                },
+                {
+                    name: "Fusion Tacos",
+                    description: "East meets West in these creative tacos.",
+                    ingredients: ["Tortillas", "Korean BBQ", "Kimchi", "Avocado", "Sriracha mayo"],
+                    instructions: "Warm tortillas, fill with BBQ, top with kimchi and sauce.",
+                    time: 30,
+                    difficulty: "medium",
+                    rating: 4.8,
+                    isVegetarian: false
+                }
+            ],
+            lazy: [
+                {
+                    name: "5-Minute Microwave Mug Cake",
+                    description: "Instant chocolate satisfaction!",
+                    ingredients: ["Flour", "Cocoa powder", "Sugar", "Milk", "Oil"],
+                    instructions: "Mix in mug, microwave for 1 minute, enjoy!",
+                    time: 5,
+                    difficulty: "easy",
+                    rating: 4.2,
+                    isVegetarian: true
+                },
+                {
+                    name: "No-Cook Mediterranean Bowl",
+                    description: "Fresh and easy assembly required.",
+                    ingredients: ["Hummus", "Cherry tomatoes", "Cucumber", "Pita bread", "Olives"],
+                    instructions: "Arrange ingredients in a bowl, drizzle with olive oil.",
+                    time: 10,
+                    difficulty: "easy",
+                    rating: 4.5,
+                    isVegetarian: true
+                }
+            ]
+        };
+
+        let currentMood = localStorage.getItem('lastMood') || null;
+        let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+        let currentFilter = 'all';
+        const recipeContainer = document.getElementById('recipeContainer');
+        const moodButtons = document.querySelectorAll('.mood-btn');
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        const searchInput = document.getElementById('searchInput');
+        const randomBtn = document.getElementById('randomBtn');
+        const viewAllBtn = document.getElementById('viewAllBtn');
+
+        function getStarRating(rating) {
+            const fullStars = Math.floor(rating);
+            const hasHalfStar = rating % 1 >= 0.5;
+            let stars = '★'.repeat(fullStars);
+            if (hasHalfStar) stars += '½';
+            stars += '☆'.repeat(5 - Math.ceil(rating));
+            return stars;
+        }
+
+        function displayRecipes(mood, filter = currentFilter, searchTerm = '') {
+            recipeContainer.innerHTML = '';
+            const recipesToShow = mood === 'all' ? 
+                Object.values(recipes).flat() : 
+                recipes[mood];
+
+            let filteredRecipes = recipesToShow.filter(recipe => {
+                const matchesSearch = searchTerm === '' || 
+                    recipe.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    recipe.ingredients.some(i => i.toLowerCase().includes(searchTerm.toLowerCase()));
+
+                const matchesFilter = 
+                    filter === 'all' ||
+                    (filter === 'quick' && recipe.time <= 15) ||
+                    (filter === 'easy' && recipe.difficulty === 'easy') ||
+                    (filter === 'vegetarian' && recipe.isVegetarian) ||
+                    (filter === 'favorite' && favorites.includes(recipe.name));
+
+                return matchesSearch && matchesFilter;
+            });
+
+            filteredRecipes.forEach((recipe, index) => {
+                const delay = index * 100;
+                const card = document.createElement('div');
+                card.className = 'recipe-card';
+                card.style.animationDelay = `${delay}ms`;
+                
+                const isFavorite = favorites.includes(recipe.name);
+                
+                card.innerHTML = `
+                    <h3>
+                        ${recipe.name}
+                        <button class="favorite-btn ${isFavorite ? 'active' : ''}" data-recipe="${recipe.name}">
+                            ${isFavorite ? '❤️' : '🤍'}
+                        </button>
+                    </h3>
+                    <p>${recipe.description}</p>
+                    <div class="recipe-info">
+                        <span>⏱️ ${recipe.time}min</span>
+                        <span class="difficulty ${recipe.difficulty}">${recipe.difficulty.toUpperCase()}</span>
+                        <span class="rating">${getStarRating(recipe.rating)}</span>
+                    </div>
+                    <div class="ingredients">
+                        <strong>Ingredients:</strong>
+                        <ul>${recipe.ingredients.map(i => `<li>${i}</li>`).join('')}</ul>
+                    </div>
+                    <div class="instructions">
+                        <strong>Instructions:</strong>
+                        <p>${recipe.instructions}</p>
+                    </div>
+                `;
+                
+                recipeContainer.appendChild(card);
+            });
+
+            // Add event listeners for favorite buttons
+            document.querySelectorAll('.favorite-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const recipeName = e.target.dataset.recipe;
+                    if (favorites.includes(recipeName)) {
+                        favorites = favorites.filter(name => name !== recipeName);
+                        e.target.textContent = '🤍';
+                    } else {
+                        favorites.push(recipeName);
+                        e.target.textContent = '❤️';
+                    }
+                    e.target.classList.toggle('active');
+                    localStorage.setItem('favorites', JSON.stringify(favorites));
+                });
+            });
+        }
+
+        function setActiveMood(mood) {
+            moodButtons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.mood === mood) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        function setActiveFilter(filter) {
+            filterButtons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.filter === filter) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        moodButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const mood = btn.dataset.mood;
+                currentMood = mood;
+                localStorage.setItem('lastMood', mood);
+                setActiveMood(mood);
+                displayRecipes(mood);
+            });
+        });
+
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentFilter = btn.dataset.filter;
+                setActiveFilter(currentFilter);
+                displayRecipes(currentMood || 'all', currentFilter, searchInput.value);
+            });
+        });
+
+        searchInput.addEventListener('input', (e) => {
+            displayRecipes(currentMood || 'all', currentFilter, e.target.value);
+        });
+
+        randomBtn.addEventListener('click', () => {
+            const moods = Object.keys(recipes);
+            const randomMood = moods[Math.floor(Math.random() * moods.length)];
+            currentMood = randomMood;
+            setActiveMood(randomMood);
+            displayRecipes(randomMood);
+        });
+
+        viewAllBtn.addEventListener('click', () => {
+            setActiveMood(null);
+            displayRecipes('all');
+        });
+
+        // Initialize with last selected mood or show all
+        if (currentMood) {
+            setActiveMood(currentMood);
+            displayRecipes(currentMood);
+        } else {
+            displayRecipes('all');
+        }
+    </script>
+</body>
+</html> 
